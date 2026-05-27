@@ -120,6 +120,7 @@ waiting_players = []
 
 @sock.route("/ws")
 def ws_handler(ws):
+    global waiting_players
     user_id = None
     try:
         raw = ws.receive()
@@ -164,7 +165,6 @@ def ws_handler(ws):
         print(f"WS error: {e}")
     finally:
         # Clean up waiting list if still there
-        global waiting_players
         waiting_players = [p for p in waiting_players if p.get("user_id") != user_id]
 
 
