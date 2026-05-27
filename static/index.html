@@ -6,100 +6,114 @@
   <title>Make a Number</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: var(--tg-theme-bg-color, #f7f7f8);
-      color: var(--tg-theme-text-color, #1a1a1a);
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --bg:        var(--tg-theme-bg-color,        #f7f7f8);
+      --bg2:       var(--tg-theme-secondary-bg-color, #fff);
+      --text:      var(--tg-theme-text-color,       #1a1a1a);
+      --hint:      var(--tg-theme-hint-color,        #999);
+      --border:    rgba(0,0,0,0.08);
+      --blue:      #2AABEE;
+      --dark:      #0f0e1a;
+      --tile-blue:   #378ADD; --tile-blue-bg:   #E6F1FB; --tile-blue-c:   #0C447C; --tile-blue-b:   #85B7EB;
+      --tile-orange: #EF9F27; --tile-orange-bg: #FAEEDA; --tile-orange-c: #633806; --tile-orange-b: #EF9F27;
+      --tile-green:  #639922; --tile-green-bg:  #EAF3DE; --tile-green-c:  #27500A; --tile-green-b:  #97C459;
+      --tile-purple: #7F77DD; --tile-purple-bg: #EEEDFE; --tile-purple-c: #3C3489; --tile-purple-b: #AFA9EC;
+    }
+
+    html, body {
+      font-family: 'DM Sans', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      overflow-x: hidden;
     }
 
     /* ── Screens ── */
-    .screen { display: none; width: 100%; max-width: 420px; padding: 24px 20px; flex-direction: column; align-items: center; }
+    .screen { display: none; flex-direction: column; align-items: center; width: 100%; min-height: 100vh; }
     .screen.active { display: flex; }
 
-    /* ── Home ── */
-    .game-icon {
-      width: 64px; height: 64px;
-      background: #2AABEE;
-      border-radius: 18px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 32px; color: #fff;
-      margin-bottom: 14px;
-    }
-    .game-title { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
-    .game-subtitle { font-size: 13px; color: var(--tg-theme-hint-color, #999); margin-bottom: 24px; }
+    /* ══════════════════════════════════════════
+       HOME SCREEN
+    ══════════════════════════════════════════ */
+    #screen-home { background: var(--bg); }
 
-    .preview-puzzle {
-      background: var(--tg-theme-secondary-bg-color, #fff);
-      border-radius: 14px;
-      border: 0.5px solid rgba(0,0,0,0.08);
-      padding: 16px;
+    .hero {
+      background: var(--dark);
+      width: 100%; padding: 36px 24px 28px;
+      display: flex; flex-direction: column; align-items: center;
+      position: relative; overflow: hidden;
+      gap: 10px;
+    }
+    .hero-bg {
+      position: absolute; inset: 0; pointer-events: none;
+    }
+    .hero-title {
+      font-size: 26px; font-weight: 600; color: #fff;
+      letter-spacing: -0.5px; position: relative; z-index: 1;
+    }
+    .hero-sub {
+      font-size: 13px; color: rgba(255,255,255,0.45);
+      position: relative; z-index: 1;
+    }
+
+    .home-body {
+      padding: 20px 18px 24px;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 14px; width: 100%; max-width: 420px;
+    }
+
+    /* Level badge */
+    .level-badge {
       width: 100%;
-      margin-bottom: 18px;
-      display: flex; flex-direction: column; align-items: center; gap: 12px;
+      background: var(--bg2);
+      border-radius: 14px;
+      border: 0.5px solid var(--border);
+      padding: 12px 16px;
+      display: flex; align-items: center; gap: 12px;
     }
-    .target-row { display: flex; align-items: center; gap: 8px; }
-    .target-label { font-size: 12px; color: var(--tg-theme-hint-color, #999); }
-    .target-num { font-size: 28px; font-weight: 600; }
+    .level-emoji { font-size: 28px; }
+    .level-info { flex: 1; }
+    .level-name { font-size: 15px; font-weight: 600; }
+    .level-sub  { font-size: 11px; color: var(--hint); margin-top: 1px; }
+    .level-num  {
+      font-size: 22px; font-weight: 600; color: var(--blue);
+      font-family: 'DM Mono', monospace;
+    }
 
-    .num-tiles { display: flex; gap: 10px; }
-    .tile {
-      width: 52px; height: 52px;
-      background: var(--tg-theme-bg-color, #f0f0f0);
-      border-radius: 12px;
-      border: 1.5px solid rgba(0,0,0,0.1);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 20px; font-weight: 600;
-      cursor: pointer;
-      transition: background 0.15s, border-color 0.15s;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .tile.selected {
-      background: #e8f5fd;
-      border-color: #2AABEE;
-      color: #1578b8;
-    }
-    .tile-hint { font-size: 11px; color: var(--tg-theme-hint-color, #bbb); }
-
+    /* Stats */
     .stats-row {
       display: grid; grid-template-columns: 1fr 1fr;
-      gap: 10px; width: 100%; margin-bottom: 18px;
+      gap: 10px; width: 100%;
     }
     .stat-card {
-      background: var(--tg-theme-secondary-bg-color, #fff);
-      border-radius: 12px;
-      border: 0.5px solid rgba(0,0,0,0.08);
-      padding: 12px; text-align: center;
+      background: var(--bg2); border-radius: 12px;
+      border: 0.5px solid var(--border);
+      padding: 12px 14px; text-align: center;
     }
-    .stat-label { font-size: 11px; color: var(--tg-theme-hint-color, #999); margin-bottom: 4px; }
-    .stat-value { font-size: 22px; font-weight: 600; }
+    .stat-label { font-size: 11px; color: var(--hint); margin-bottom: 3px; }
+    .stat-value { font-size: 22px; font-weight: 600; font-family: 'DM Mono', monospace; }
 
-    /* ── Buttons ── */
+    /* Buttons */
     .btn-primary {
       width: 100%; padding: 14px;
-      background: #2AABEE; color: #fff;
+      background: var(--blue); color: #fff;
       border: none; border-radius: 12px;
-      font-size: 15px; font-weight: 600;
-      cursor: pointer; margin-bottom: 10px;
+      font-size: 15px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
       display: flex; align-items: center; justify-content: center; gap: 8px;
-      -webkit-tap-highlight-color: transparent;
     }
     .btn-secondary {
       width: 100%; padding: 14px;
-      background: var(--tg-theme-secondary-bg-color, #fff);
-      color: #2AABEE;
-      border: 1px solid rgba(42,171,238,0.3);
-      border-radius: 12px;
-      font-size: 15px; font-weight: 600;
-      cursor: pointer; margin-bottom: 10px;
+      background: var(--bg2); color: var(--blue);
+      border: 1px solid rgba(42,171,238,0.3); border-radius: 12px;
+      font-size: 15px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
       display: flex; align-items: center; justify-content: center; gap: 8px;
       position: relative;
-      -webkit-tap-highlight-color: transparent;
     }
     .online-badge {
       position: absolute; right: 14px;
@@ -109,125 +123,1099 @@
       display: flex; align-items: center; gap: 4px;
     }
     .online-dot {
-      width: 6px; height: 6px;
-      background: #22c55e; border-radius: 50%;
-      animation: pulse 1.5s infinite;
+      width: 6px; height: 6px; background: #22c55e;
+      border-radius: 50%; animation: pulse 1.5s infinite;
     }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; } 50% { opacity: 0.3; }
-    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
     .how-link {
-      font-size: 12px; color: #2AABEE;
+      font-size: 12px; color: var(--blue);
       cursor: pointer; text-decoration: underline;
-      text-underline-offset: 2px; margin-top: 4px;
+      text-underline-offset: 2px;
+    }
+
+    /* ══════════════════════════════════════════
+       GAME HEADER (shared by solo + multi)
+    ══════════════════════════════════════════ */
+    .game-header {
+      background: var(--dark);
+      width: 100%; padding: 16px 18px 14px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: relative; overflow: hidden; flex-shrink: 0;
+    }
+    .game-header svg.bg { position:absolute;inset:0;width:100%;height:100%;pointer-events:none; }
+    .header-pill {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 20px; padding: 4px 12px;
+      font-size: 12px; color: rgba(255,255,255,0.7);
+      position: relative; z-index: 2;
+    }
+    .timer-wrap { display:flex;flex-direction:column;align-items:center;position:relative;z-index:2; }
+    .timer-num  { font-size:34px;font-weight:600;color:#fff;line-height:1;letter-spacing:-1px;font-family:'DM Mono',monospace; }
+    .timer-num.warn { color:#EF9F27; }
+    .timer-label { font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:0.5px;text-transform:uppercase; }
+    .header-right { text-align:right;position:relative;z-index:2; }
+    .header-right-num   { font-size:20px;font-weight:600;color:#fff;font-family:'DM Mono',monospace; }
+    .header-right-label { font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px; }
+
+    /* Player chips for multiplayer */
+    .player-chip { display:flex;align-items:center;gap:8px;position:relative;z-index:2; }
+    .avatar {
+      width:32px;height:32px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-size:13px;font-weight:600;
+    }
+    .avatar-you { background:var(--blue);color:#fff; }
+    .avatar-opp { background:var(--tile-purple);color:#fff; }
+    .player-name { font-size:13px;font-weight:500; }
+    .player-name.you { color:#fff; }
+    .player-name.opp { color:rgba(255,255,255,0.65); }
+
+    /* Timer bar */
+    .timer-bar-wrap { background:rgba(0,0,0,0.15);height:3px;width:100%;flex-shrink:0; }
+    .timer-bar { height:3px;background:var(--blue);transition:width 1s linear;width:100%; }
+    .timer-bar.warn   { background:#EF9F27; }
+    .timer-bar.danger { background:#E24B4A; }
+
+    /* Opponent status bar */
+    .opp-bar {
+      background:#1a1828;padding:10px 18px;
+      display:flex;align-items:center;gap:10px;
+      border-bottom:0.5px solid rgba(255,255,255,0.06);
+      flex-shrink:0; width:100%;
+    }
+    .opp-dot { width:8px;height:8px;border-radius:50%;background:var(--tile-purple);flex-shrink:0; }
+    .opp-dot.active { animation:oppPulse 1.2s infinite; }
+    @keyframes oppPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
+    .opp-status { font-size:12px;color:rgba(255,255,255,0.5); }
+    .opp-status span { color:rgba(255,255,255,0.85);font-weight:500; }
+
+    /* ══════════════════════════════════════════
+       GAME BODY (shared)
+    ══════════════════════════════════════════ */
+    .game-body {
+      padding: 16px 18px 20px;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 13px; width: 100%; flex: 1;
+    }
+
+    .target-banner {
+      background: var(--dark); border-radius: 12px;
+      padding: 10px 36px; width: 100%;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    .target-label { font-size:11px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.5px; }
+    .target-num   { font-size:36px;font-weight:600;color:#fff;letter-spacing:-1px;font-family:'DM Mono',monospace; }
+
+    .expr-box {
+      background:var(--bg2);border:0.5px solid var(--border);
+      border-radius:12px;width:100%;padding:10px 16px;min-height:44px;
+      display:flex;align-items:center;justify-content:center;gap:6px;
+      font-size:18px;font-weight:500;flex-wrap:wrap;
+      transition:background 0.2s;
+    }
+    .expr-box.invalid { background:#FCEBEB; }
+    .expr-placeholder { font-size:13px;color:var(--hint);font-weight:400; }
+    .expr-num    { padding:2px 6px;border-radius:6px;background:#E6F1FB;color:#0C447C;font-size:17px; }
+    .expr-op     { color:var(--hint); }
+    .expr-result { color:#639922;font-weight:600; }
+    .expr-eq     { color:var(--hint);font-size:14px; }
+
+    .tiles-row {
+      display:flex;gap:10px;justify-content:center;
+      min-height:64px;align-items:center;flex-wrap:wrap;
+      width:100%;
+    }
+    .num-circle {
+      width:60px;height:60px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-size:22px;font-weight:600;cursor:pointer;
+      border:2.5px solid transparent;
+      transition:transform 0.12s;
+      font-family:'DM Mono',monospace;
+    }
+    .nc-blue   { background:var(--tile-blue-bg);   color:var(--tile-blue-c);   border-color:var(--tile-blue-b); }
+    .nc-orange { background:var(--tile-orange-bg);  color:var(--tile-orange-c); border-color:var(--tile-orange-b); }
+    .nc-green  { background:var(--tile-green-bg);   color:var(--tile-green-c);  border-color:var(--tile-green-b); }
+    .nc-purple { background:var(--tile-purple-bg);  color:var(--tile-purple-c); border-color:var(--tile-purple-b); }
+    .nc-merged { background:var(--tile-blue);color:#fff;border-color:#185FA5; }
+    .num-circle.selected { transform:scale(1.1);box-shadow:0 0 0 3px rgba(42,171,238,0.25); }
+    .nc-blue.selected   { background:var(--tile-blue);   color:#fff; }
+    .nc-orange.selected { background:var(--tile-orange);  color:#fff; }
+    .nc-green.selected  { background:var(--tile-green);   color:#fff; }
+    .nc-purple.selected { background:var(--tile-purple);  color:#fff; }
+
+    @keyframes popIn  { 0%{transform:scale(0.3);opacity:0} 70%{transform:scale(1.15)} 100%{transform:scale(1);opacity:1} }
+    @keyframes popOut { 0%{transform:scale(1);opacity:1} 100%{transform:scale(0);opacity:0} }
+    .tile-pop-in  { animation:popIn  0.28s cubic-bezier(.34,1.56,.64,1) forwards; }
+    .tile-pop-out { animation:popOut 0.18s ease-in forwards; }
+
+    .ops-row { display:flex;gap:8px;justify-content:center;width:100%; }
+    .op-btn {
+      flex:1;max-width:70px;height:46px;border-radius:12px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:22px;font-weight:500;cursor:pointer;
+      border:1.5px solid transparent;transition:transform 0.1s;
+    }
+    .op-btn:active { transform:scale(0.92); }
+    .op-btn.disabled { opacity:0.3;pointer-events:none; }
+    .op-plus   { background:#E1F5EE;color:#085041;border-color:#5DCAA5; }
+    .op-minus  { background:#FAECE7;color:#4A1B0C;border-color:#F0997B; }
+    .op-times  { background:#FBEAF0;color:#4B1528;border-color:#ED93B1; }
+    .op-divide { background:#EEEDFE;color:#26215C;border-color:#AFA9EC; }
+
+    .hint-text { font-size:11px;color:var(--hint);text-align:center;min-height:16px; }
+    .hint-text.warn { color:#A32D2D; }
+    .hint-text.good { color:#639922; }
+
+    .action-row { display:flex;gap:10px;width:100%; }
+    .btn-undo {
+      flex:1;padding:11px;background:var(--bg2);
+      border:0.5px solid var(--border);border-radius:12px;
+      font-size:14px;font-weight:500;color:var(--hint);cursor:pointer;
+      display:flex;align-items:center;justify-content:center;gap:6px;
+      font-family:'DM Sans',sans-serif;
+    }
+    .btn-clear {
+      flex:1;padding:11px;background:#FCEBEB;border:0.5px solid #F7C1C1;
+      border-radius:12px;font-size:14px;font-weight:500;color:#A32D2D;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;gap:6px;
+      font-family:'DM Sans',sans-serif;
+    }
+
+    /* ══════════════════════════════════════════
+       OVERLAYS
+    ══════════════════════════════════════════ */
+    .overlay {
+      position:fixed;inset:0;z-index:100;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:8px;opacity:0;pointer-events:none;transition:opacity 0.25s;
+    }
+    .overlay.show { opacity:1;pointer-events:auto; }
+    .overlay-success { background:rgba(99,153,34,0.93); }
+    .overlay-win     { background:rgba(99,153,34,0.93); }
+    .overlay-lose    { background:rgba(163,45,45,0.93); }
+    .overlay-waiting { background:var(--dark); }
+    .overlay-levelup { background:rgba(15,14,26,0.96); }
+
+    .overlay-icon  { font-size:52px; }
+    .overlay-title { font-size:26px;font-weight:600;color:#fff;letter-spacing:-0.5px; }
+    .overlay-sub   { font-size:14px;color:rgba(255,255,255,0.7); }
+    .overlay-btn {
+      margin-top:10px;padding:13px 36px;
+      background:rgba(255,255,255,0.15);
+      border:1px solid rgba(255,255,255,0.3);
+      border-radius:12px;color:#fff;font-size:15px;font-weight:600;
+      cursor:pointer;font-family:'DM Sans',sans-serif;
+    }
+
+    /* Waiting spinner */
+    @keyframes spin { to{transform:rotate(360deg)} }
+    .spinner {
+      width:48px;height:48px;border-radius:50%;
+      border:3px solid rgba(255,255,255,0.1);
+      border-top-color:var(--blue);
+      animation:spin 0.9s linear infinite;
+    }
+
+    /* Level up badge */
+    .levelup-badge {
+      background:rgba(255,255,255,0.1);
+      border:1px solid rgba(255,255,255,0.2);
+      border-radius:16px;padding:14px 28px;
+      text-align:center;margin:8px 0;
+    }
+    .levelup-emoji { font-size:40px;display:block;margin-bottom:6px; }
+    .levelup-name  { font-size:18px;font-weight:600;color:#fff; }
+    .levelup-sub   { font-size:12px;color:rgba(255,255,255,0.6); }
+
+    /* ══════════════════════════════════════════
+       RESULTS SCREEN
+    ══════════════════════════════════════════ */
+    #screen-results {
+      background: var(--dark);
+      justify-content: flex-start;
+    }
+    .results-hero {
+      width:100%;padding:36px 24px 24px;
+      display:flex;flex-direction:column;align-items:center;gap:6px;
+      position:relative;overflow:hidden;
+    }
+    .results-bg { position:absolute;inset:0;pointer-events:none; }
+    .results-emoji { font-size:52px;position:relative;z-index:1; }
+    .results-title { font-size:24px;font-weight:600;color:#fff;letter-spacing:-0.5px;position:relative;z-index:1; }
+    .results-score {
+      font-size:48px;font-weight:600;color:#fff;
+      font-family:'DM Mono',monospace;letter-spacing:-2px;
+      position:relative;z-index:1;
+    }
+    .results-score-label { font-size:12px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;position:relative;z-index:1; }
+
+    .results-body {
+      background:var(--bg);border-radius:24px 24px 0 0;
+      width:100%;flex:1;padding:24px 18px 32px;
+      display:flex;flex-direction:column;gap:14px;
+    }
+    .results-stat-row { display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px; }
+    .results-stat {
+      background:var(--bg2);border-radius:12px;border:0.5px solid var(--border);
+      padding:12px 10px;text-align:center;
+    }
+    .results-stat-val { font-size:20px;font-weight:600;font-family:'DM Mono',monospace; }
+    .results-stat-lbl { font-size:10px;color:var(--hint);margin-top:2px;text-transform:uppercase;letter-spacing:0.3px; }
+
+    .badge-card {
+      background:var(--dark);border-radius:14px;
+      padding:16px;display:flex;align-items:center;gap:14px;
+    }
+    .badge-emoji { font-size:36px; }
+    .badge-info { flex:1; }
+    .badge-title { font-size:15px;font-weight:600;color:#fff; }
+    .badge-sub   { font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px; }
+    .badge-new   {
+      background:var(--blue);color:#fff;
+      font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;
+      text-transform:uppercase;letter-spacing:0.5px;
+    }
+
+    .round-scores {
+      background:var(--bg2);border-radius:14px;border:0.5px solid var(--border);
+      overflow:hidden;
+    }
+    .round-scores-title {
+      padding:12px 14px;font-size:12px;font-weight:600;
+      color:var(--hint);text-transform:uppercase;letter-spacing:0.5px;
+      border-bottom:0.5px solid var(--border);
+    }
+    .round-row {
+      display:flex;align-items:center;padding:10px 14px;gap:10px;
+      border-bottom:0.5px solid var(--border);
+    }
+    .round-row:last-child { border-bottom:none; }
+    .round-num  { font-size:12px;color:var(--hint);width:24px; }
+    .round-nums { font-size:13px;font-family:'DM Mono',monospace;flex:1;color:var(--text); }
+    .round-pts  { font-size:13px;font-weight:600;font-family:'DM Mono',monospace; }
+    .round-pts.zero { color:var(--hint); }
+    .round-pts.good { color:#639922; }
+
+    /* ══════════════════════════════════════════
+       HOW TO PLAY
+    ══════════════════════════════════════════ */
+    .how-overlay {
+      position:fixed;inset:0;z-index:200;
+      background:rgba(15,14,26,0.95);
+      display:flex;flex-direction:column;align-items:center;
+      padding:32px 24px;opacity:0;pointer-events:none;transition:opacity 0.2s;
+      overflow-y:auto;
+    }
+    .how-overlay.show { opacity:1;pointer-events:auto; }
+    .how-title { font-size:22px;font-weight:600;color:#fff;margin-bottom:20px; }
+    .how-step  {
+      background:rgba(255,255,255,0.07);border-radius:12px;
+      padding:14px 16px;width:100%;margin-bottom:10px;
+      display:flex;align-items:flex-start;gap:12px;
+    }
+    .how-step-num {
+      width:26px;height:26px;border-radius:50%;
+      background:var(--blue);color:#fff;
+      display:flex;align-items:center;justify-content:center;
+      font-size:13px;font-weight:600;flex-shrink:0;
+    }
+    .how-step-text { font-size:14px;color:rgba(255,255,255,0.8);line-height:1.5; }
+    .how-close {
+      margin-top:16px;padding:13px 36px;
+      background:var(--blue);border:none;border-radius:12px;
+      color:#fff;font-size:15px;font-weight:600;cursor:pointer;
+      font-family:'DM Sans',sans-serif;
     }
   </style>
 </head>
 <body>
 
-  <!-- HOME SCREEN -->
-  <div class="screen active" id="screen-home">
-    <div class="game-icon">∑</div>
-    <div class="game-title">Make a Number</div>
-    <div class="game-subtitle">Use 4 numbers to reach the target</div>
+<!-- ══════════════════════════════════════════
+     HOME SCREEN
+══════════════════════════════════════════ -->
+<div class="screen active" id="screen-home">
+  <div class="hero">
+    <svg class="hero-bg" viewBox="0 0 420 180" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+      <circle cx="80"  cy="40"  r="65" fill="#378ADD" opacity="0.15"/>
+      <circle cx="340" cy="60"  r="55" fill="#7F77DD" opacity="0.13"/>
+      <circle cx="200" cy="150" r="70" fill="#EF9F27" opacity="0.09"/>
+      <circle cx="370" cy="150" r="45" fill="#639922" opacity="0.10"/>
+      <circle cx="20"  cy="150" r="40" fill="#2AABEE" opacity="0.09"/>
+      <text x="55"  y="65"  font-size="30" fill="rgba(255,255,255,0.18)" font-family="Georgia,serif" font-weight="700">7</text>
+      <text x="295" y="55"  font-size="24" fill="rgba(255,255,255,0.13)" font-family="Georgia,serif" font-weight="700">×</text>
+      <text x="325" y="82"  font-size="28" fill="rgba(255,255,255,0.16)" font-family="Georgia,serif" font-weight="700">3</text>
+      <text x="160" y="158" font-size="22" fill="rgba(255,255,255,0.10)" font-family="Georgia,serif" font-weight="700">+</text>
+      <text x="188" y="165" font-size="26" fill="rgba(255,255,255,0.12)" font-family="Georgia,serif" font-weight="700">9</text>
+      <text x="340" y="138" font-size="20" fill="rgba(255,255,255,0.09)" font-family="Georgia,serif" font-weight="700">÷</text>
+      <text x="18"  y="115" font-size="22" fill="rgba(255,255,255,0.07)" font-family="Georgia,serif" font-weight="700">−</text>
+      <line x1="88" y1="72" x2="295" y2="50" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+      <line x1="340" y1="80" x2="195" y2="155" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+    </svg>
+    <div class="hero-title" style="position:relative;z-index:1;">Make a Number</div>
+    <div class="hero-sub"   style="position:relative;z-index:1;">Use 4 numbers to reach the target</div>
+  </div>
 
-    <div class="preview-puzzle">
-      <div class="target-row">
-        <span class="target-label">Target</span>
-        <span class="target-num" id="preview-target">24</span>
+  <div class="home-body">
+    <div class="level-badge" id="level-badge">
+      <div class="level-emoji" id="home-level-emoji">🔢</div>
+      <div class="level-info">
+        <div class="level-name" id="home-level-name">Apprentice</div>
+        <div class="level-sub"  id="home-level-sub">Level 1 · Keep playing to advance</div>
       </div>
-      <div class="num-tiles" id="preview-tiles"></div>
-      <span class="tile-hint" id="tile-hint">Tap a tile to try it out</span>
+      <div class="level-num" id="home-level-num">L1</div>
     </div>
 
     <div class="stats-row">
       <div class="stat-card">
         <div class="stat-label">Best score</div>
-        <div class="stat-value" id="best-score">—</div>
+        <div class="stat-value" id="home-best-score">—</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Games played</div>
-        <div class="stat-value" id="games-played">—</div>
+        <div class="stat-value" id="home-games-played">—</div>
       </div>
     </div>
 
-    <button class="btn-primary" onclick="goSolo()">🎯 Solo mode</button>
-
-    <button class="btn-secondary" onclick="goMultiplayer()">
+    <button class="btn-primary" onclick="startSolo()">🎯 Solo mode</button>
+    <button class="btn-secondary" onclick="startMultiplayer()">
       👥 Play vs. opponent
       <span class="online-badge">
         <span class="online-dot"></span>
         <span id="online-count">...</span> online
       </span>
     </button>
+    <span class="how-link" onclick="showHow()">How to play?</span>
+  </div>
+</div>
 
-    <span class="how-link" onclick="showHowToPlay()">How to play?</span>
+<!-- ══════════════════════════════════════════
+     SOLO SCREEN
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-solo">
+  <div class="game-header" id="solo-header">
+    <svg class="bg" viewBox="0 0 420 72" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+      <circle cx="370" cy="20" r="55" fill="#378ADD" opacity="0.10"/>
+      <circle cx="50"  cy="60" r="40" fill="#7F77DD" opacity="0.09"/>
+      <text x="330" y="40" font-size="18" fill="rgba(255,255,255,0.06)" font-family="Georgia,serif">×</text>
+      <text x="28"  y="30" font-size="16" fill="rgba(255,255,255,0.06)" font-family="Georgia,serif">+</text>
+    </svg>
+    <div class="header-pill">Round <span id="solo-round">1</span> / 10</div>
+    <div class="timer-wrap">
+      <div class="timer-num" id="solo-timer">60</div>
+      <div class="timer-label">seconds</div>
+    </div>
+    <div class="header-right">
+      <div class="header-right-num"   id="solo-score">0</div>
+      <div class="header-right-label">score</div>
+    </div>
+  </div>
+  <div class="timer-bar-wrap"><div class="timer-bar" id="solo-timer-bar"></div></div>
+
+  <div class="game-body">
+    <div class="target-banner">
+      <span class="target-label">Target</span>
+      <span class="target-num" id="solo-target">—</span>
+    </div>
+    <div class="expr-box" id="solo-expr"><span class="expr-placeholder">Select a number to begin</span></div>
+    <div class="tiles-row" id="solo-tiles"></div>
+    <div class="ops-row">
+      <div class="op-btn op-plus   disabled" onclick="tapOp(this,'+','solo')">+</div>
+      <div class="op-btn op-minus  disabled" onclick="tapOp(this,'−','solo')">−</div>
+      <div class="op-btn op-times  disabled" onclick="tapOp(this,'×','solo')">×</div>
+      <div class="op-btn op-divide disabled" onclick="tapOp(this,'÷','solo')">÷</div>
+    </div>
+    <div class="hint-text" id="solo-hint">Use all 4 numbers to reach the target</div>
+    <div class="action-row">
+      <button class="btn-undo"  onclick="doUndo('solo')">↩ Undo</button>
+      <button class="btn-clear" onclick="doClear('solo')">↺ Clear</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MULTIPLAYER SCREEN
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-multi">
+  <div class="game-header">
+    <svg class="bg" viewBox="0 0 420 72" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+      <circle cx="370" cy="20" r="55" fill="#7F77DD" opacity="0.10"/>
+      <circle cx="50"  cy="60" r="40" fill="#378ADD" opacity="0.09"/>
+    </svg>
+    <div class="player-chip">
+      <div class="avatar avatar-you" id="multi-you-avatar">Y</div>
+      <div class="player-name you"   id="multi-you-name">You</div>
+    </div>
+    <div class="timer-wrap">
+      <div class="timer-num" id="multi-timer">60</div>
+      <div class="timer-label">seconds</div>
+    </div>
+    <div class="player-chip" style="flex-direction:row-reverse;">
+      <div class="avatar avatar-opp" id="multi-opp-avatar">?</div>
+      <div class="player-name opp"   id="multi-opp-name">Opponent</div>
+    </div>
+  </div>
+  <div class="timer-bar-wrap"><div class="timer-bar" id="multi-timer-bar"></div></div>
+  <div class="opp-bar">
+    <div class="opp-dot active"></div>
+    <div class="opp-status"><span id="multi-opp-status-name">Opponent</span> is playing...</div>
   </div>
 
-  <script>
-    // ── Telegram init ──
-    const tg = window.Telegram?.WebApp;
-    if (tg) {
-      tg.ready();
-      tg.expand();
+  <div class="game-body">
+    <div class="target-banner">
+      <span class="target-label">Target</span>
+      <span class="target-num" id="multi-target">—</span>
+    </div>
+    <div class="expr-box" id="multi-expr"><span class="expr-placeholder">Select a number to begin</span></div>
+    <div class="tiles-row" id="multi-tiles"></div>
+    <div class="ops-row">
+      <div class="op-btn op-plus   disabled" onclick="tapOp(this,'+','multi')">+</div>
+      <div class="op-btn op-minus  disabled" onclick="tapOp(this,'−','multi')">−</div>
+      <div class="op-btn op-times  disabled" onclick="tapOp(this,'×','multi')">×</div>
+      <div class="op-btn op-divide disabled" onclick="tapOp(this,'÷','multi')">÷</div>
+    </div>
+    <div class="hint-text" id="multi-hint">Use all 4 numbers to reach the target</div>
+    <div class="action-row">
+      <button class="btn-undo"  onclick="doUndo('multi')">↩ Undo</button>
+      <button class="btn-clear" onclick="doClear('multi')">↺ Clear</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     RESULTS SCREEN
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-results">
+  <div class="results-hero">
+    <svg class="results-bg" viewBox="0 0 420 220" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+      <circle cx="60"  cy="50"  r="80" fill="#378ADD" opacity="0.12"/>
+      <circle cx="360" cy="80"  r="70" fill="#7F77DD" opacity="0.10"/>
+      <circle cx="210" cy="200" r="90" fill="#EF9F27" opacity="0.08"/>
+    </svg>
+    <div class="results-emoji" id="results-emoji">🏆</div>
+    <div class="results-title" id="results-title">Level Complete!</div>
+    <div class="results-score" id="results-score">0</div>
+    <div class="results-score-label">total score</div>
+  </div>
+  <div class="results-body">
+    <div class="results-stat-row">
+      <div class="results-stat">
+        <div class="results-stat-val" id="results-solved">0</div>
+        <div class="results-stat-lbl">Solved</div>
+      </div>
+      <div class="results-stat">
+        <div class="results-stat-val" id="results-best-round">0</div>
+        <div class="results-stat-lbl">Best round</div>
+      </div>
+      <div class="results-stat">
+        <div class="results-stat-val" id="results-time-avg">0s</div>
+        <div class="results-stat-lbl">Avg time</div>
+      </div>
+    </div>
+
+    <div class="badge-card" id="badge-card">
+      <div class="badge-emoji" id="results-badge-emoji">🔢</div>
+      <div class="badge-info">
+        <div class="badge-title" id="results-badge-name">Apprentice</div>
+        <div class="badge-sub"   id="results-badge-sub">Your current rank</div>
+      </div>
+      <span class="badge-new" id="results-badge-new" style="display:none;">New!</span>
+    </div>
+
+    <div class="round-scores">
+      <div class="round-scores-title">Round breakdown</div>
+      <div id="results-rounds"></div>
+    </div>
+
+    <button class="btn-primary" onclick="goHome()" style="margin-top:4px;">← Back to home</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     OVERLAYS
+══════════════════════════════════════════ -->
+<!-- Round success flash -->
+<div class="overlay overlay-success" id="overlay-success">
+  <div class="overlay-icon">✓</div>
+  <div class="overlay-title">Solved!</div>
+  <div class="overlay-sub" id="overlay-success-pts">+120 points</div>
+</div>
+
+<!-- Multiplayer result -->
+<div class="overlay" id="overlay-multi-result">
+  <div class="overlay-icon"  id="multi-result-icon">🏆</div>
+  <div class="overlay-title" id="multi-result-title">You won!</div>
+  <div class="overlay-sub"   id="multi-result-sub">Solved in 38 seconds</div>
+  <button class="overlay-btn" onclick="goHome()">Back to home</button>
+</div>
+
+<!-- Waiting for opponent -->
+<div class="overlay overlay-waiting" id="overlay-waiting">
+  <div class="spinner"></div>
+  <div class="overlay-title" style="font-size:18px;margin-top:8px;">Finding opponent...</div>
+  <div class="overlay-sub">Usually takes a few seconds</div>
+  <button class="overlay-btn" onclick="cancelWaiting()" style="margin-top:8px;">Cancel</button>
+</div>
+
+<!-- Level up -->
+<div class="overlay overlay-levelup" id="overlay-levelup">
+  <div class="overlay-icon">🎉</div>
+  <div class="overlay-title">Level Up!</div>
+  <div class="levelup-badge">
+    <span class="levelup-emoji" id="levelup-emoji">🧮</span>
+    <div class="levelup-name" id="levelup-name">Calculator</div>
+    <div class="levelup-sub"  id="levelup-sub">You reached Level 2</div>
+  </div>
+  <button class="overlay-btn" onclick="hideOverlay('overlay-levelup'); showScreen('screen-results');">See results</button>
+</div>
+
+<!-- How to play -->
+<div class="how-overlay" id="how-overlay">
+  <div class="how-title">How to play</div>
+  <div class="how-step">
+    <div class="how-step-num">1</div>
+    <div class="how-step-text">You are given <strong style="color:#fff">4 numbers</strong> and a <strong style="color:#fff">target number</strong>.</div>
+  </div>
+  <div class="how-step">
+    <div class="how-step-num">2</div>
+    <div class="how-step-text">Tap a number tile, then tap an operator (+, −, ×, ÷), then tap another number to combine them into one.</div>
+  </div>
+  <div class="how-step">
+    <div class="how-step-num">3</div>
+    <div class="how-step-text">Keep combining until <strong style="color:#fff">all 4 numbers are used</strong> and the final result equals the target.</div>
+  </div>
+  <div class="how-step">
+    <div class="how-step-num">4</div>
+    <div class="how-step-text">Division must produce <strong style="color:#fff">whole numbers only</strong>. Use Undo or Clear if you get stuck.</div>
+  </div>
+  <div class="how-step">
+    <div class="how-step-num">5</div>
+    <div class="how-step-text">Score more points by solving faster. Complete all 10 rounds to advance to the next level!</div>
+  </div>
+  <button class="how-close" onclick="hideHow()">Got it!</button>
+</div>
+
+<script>
+// ── Telegram init ──────────────────────────────────────────────────────────
+const tg = window.Telegram?.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+const user     = tg?.initDataUnsafe?.user || {};
+const userId   = user.id   || 'guest';
+const username = user.first_name || 'Player';
+const BASE_URL = window.location.origin;
+
+// ── State ──────────────────────────────────────────────────────────────────
+let playerData  = { level: 1, level_name: 'Apprentice', level_emoji: '🔢', best_score: 0, games_played: 0 };
+let soloState   = {};
+let multiState  = {};
+let ws          = null;
+
+// ── Screen management ──────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function showOverlay(id) { document.getElementById(id).classList.add('show'); }
+function hideOverlay(id) { document.getElementById(id).classList.remove('show'); }
+
+// ── Player data ────────────────────────────────────────────────────────────
+async function loadPlayer() {
+  try {
+    const res  = await fetch(`${BASE_URL}/player/${userId}`);
+    playerData = await res.json();
+  } catch(e) { console.log('Using default player data'); }
+  updateHomeUI();
+}
+
+function updateHomeUI() {
+  document.getElementById('home-level-emoji').textContent  = playerData.level_emoji || '🔢';
+  document.getElementById('home-level-name').textContent   = playerData.level_name  || 'Apprentice';
+  document.getElementById('home-level-sub').textContent    = `Level ${playerData.level} · ${playerData.level < 5 ? 'Keep playing to advance' : 'Max level reached!'}`;
+  document.getElementById('home-level-num').textContent    = `L${playerData.level}`;
+  document.getElementById('home-best-score').textContent   = playerData.best_score  || '—';
+  document.getElementById('home-games-played').textContent = playerData.games_played || '—';
+}
+
+function goHome() {
+  hideOverlay('overlay-multi-result');
+  hideOverlay('overlay-levelup');
+  hideOverlay('overlay-success');
+  clearSoloTimer();
+  clearMultiTimer();
+  if (ws) { ws.close(); ws = null; }
+  loadPlayer();
+  showScreen('screen-home');
+}
+
+// ── Online count ───────────────────────────────────────────────────────────
+function updateOnlineCount() {
+  const mock = [3, 5, 4, 7, 6];
+  document.getElementById('online-count').textContent = mock[Math.floor(Math.random() * mock.length)];
+}
+updateOnlineCount();
+setInterval(updateOnlineCount, 5000);
+
+// ── How to play ────────────────────────────────────────────────────────────
+function showHow() { document.getElementById('how-overlay').classList.add('show'); }
+function hideHow() { document.getElementById('how-overlay').classList.remove('show'); }
+
+// ══════════════════════════════════════════════════════════════════════════
+// SOLO MODE
+// ══════════════════════════════════════════════════════════════════════════
+async function startSolo() {
+  soloState = {
+    puzzles:     [],
+    roundIndex:  0,
+    score:       0,
+    roundScores: [],
+    roundTimes:  [],
+    timeLeft:    60,
+    timerInterval: null,
+    selectedTile:  null,
+    pendingOp:     null,
+    steps:         [],
+    levelTime:     60,
+  };
+
+  showScreen('screen-solo');
+
+  try {
+    const res    = await fetch(`${BASE_URL}/round?level=${playerData.level}`);
+    const data   = await res.json();
+    soloState.puzzles    = data.puzzles;
+    soloState.levelTime  = data.config.time;
+    soloState.timeLeft   = data.config.time;
+  } catch(e) {
+    // Fallback puzzles
+    soloState.puzzles   = Array(10).fill({ target:24, numbers:[4,6,3,2] });
+    soloState.levelTime = 60;
+  }
+
+  loadSoloRound();
+}
+
+function loadSoloRound() {
+  const s = soloState;
+  clearSoloTimer();
+  s.selectedTile = null;
+  s.pendingOp    = null;
+  s.steps        = [];
+  s.timeLeft     = s.levelTime;
+
+  const puzzle = s.puzzles[s.roundIndex];
+  document.getElementById('solo-round').textContent  = s.roundIndex + 1;
+  document.getElementById('solo-score').textContent  = s.score;
+  document.getElementById('solo-target').textContent = puzzle.target;
+  document.getElementById('solo-timer').textContent  = s.timeLeft;
+  document.getElementById('solo-timer').classList.remove('warn');
+  document.getElementById('solo-timer-bar').style.width = '100%';
+  document.getElementById('solo-timer-bar').className = 'timer-bar';
+  setExprPlaceholder('solo');
+  setHint('solo', 'Use all 4 numbers to reach the target');
+  setOpsEnabled('solo', false);
+  buildTiles('solo-tiles', puzzle.numbers);
+  startSoloTimer();
+}
+
+function startSoloTimer() {
+  const s = soloState;
+  s.timerInterval = setInterval(() => {
+    s.timeLeft--;
+    const el  = document.getElementById('solo-timer');
+    const bar = document.getElementById('solo-timer-bar');
+    el.textContent = s.timeLeft;
+    bar.style.width = (s.timeLeft / s.levelTime * 100) + '%';
+    if (s.timeLeft <= 10) { el.classList.add('warn'); bar.className = 'timer-bar danger'; }
+    else if (s.timeLeft <= 20) { bar.className = 'timer-bar warn'; }
+    if (s.timeLeft <= 0) {
+      clearInterval(s.timerInterval);
+      soloRoundEnd(0);
     }
+  }, 1000);
+}
 
-    const user = tg?.initDataUnsafe?.user || {};
-    const userId = user.id || "guest";
-    const username = user.first_name || "Player";
+function clearSoloTimer() { clearInterval(soloState.timerInterval); }
 
-    // ── Stats (in-memory; replace with server calls later) ──
-    const stats = { bestScore: null, gamesPlayed: 0 };
-    document.getElementById("best-score").textContent = stats.bestScore ?? "—";
-    document.getElementById("games-played").textContent = stats.gamesPlayed || "—";
+function soloRoundEnd(pts) {
+  clearSoloTimer();
+  const s = soloState;
+  s.score += pts;
+  s.roundScores.push(pts);
+  s.roundTimes.push(s.levelTime - s.timeLeft);
 
-    // ── Preview puzzle ──
-    const previewNumbers = [4, 6, 3, 2];
-    const tilesContainer = document.getElementById("preview-tiles");
-    const tileHint = document.getElementById("tile-hint");
-    let selectedTile = null;
+  if (pts > 0) {
+    document.getElementById('overlay-success-pts').textContent = `+${pts} points`;
+    showOverlay('overlay-success');
+    setTimeout(() => {
+      hideOverlay('overlay-success');
+      advanceSoloRound();
+    }, 1200);
+  } else {
+    advanceSoloRound();
+  }
+}
 
-    previewNumbers.forEach(n => {
-      const el = document.createElement("div");
-      el.className = "tile";
-      el.textContent = n;
-      el.onclick = () => {
-        if (selectedTile === el) {
-          el.classList.remove("selected");
-          selectedTile = null;
-          tileHint.textContent = "Tap a tile to try it out";
-        } else {
-          if (selectedTile) selectedTile.classList.remove("selected");
-          el.classList.add("selected");
-          selectedTile = el;
-          tileHint.textContent = `${n} selected — tap an operator next`;
-        }
-      };
-      tilesContainer.appendChild(el);
+function advanceSoloRound() {
+  soloState.roundIndex++;
+  if (soloState.roundIndex >= 10) {
+    finishSoloLevel();
+  } else {
+    loadSoloRound();
+  }
+}
+
+async function finishSoloLevel() {
+  const s = soloState;
+  try {
+    const res  = await fetch(`${BASE_URL}/player/${userId}/complete_level`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ score: s.score }),
     });
+    const data = await res.json();
+    playerData.best_score   = data.best_score;
+    playerData.games_played = data.games_played;
 
-    // ── Online count (simulated; replace with WS ping later) ──
-    function updateOnlineCount() {
-      // TODO: fetch from server
-      const mock = [3, 5, 4, 7, 6];
-      document.getElementById("online-count").textContent =
-        mock[Math.floor(Math.random() * mock.length)];
+    if (data.leveled_up) {
+      document.getElementById('levelup-emoji').textContent = data.level_emoji;
+      document.getElementById('levelup-name').textContent  = data.level_name;
+      document.getElementById('levelup-sub').textContent   = `You reached Level ${data.new_level}`;
+      playerData.level       = data.new_level;
+      playerData.level_name  = data.level_name;
+      playerData.level_emoji = data.level_emoji;
+      showResultsScreen(true);
+      showOverlay('overlay-levelup');
+    } else {
+      showResultsScreen(false);
     }
-    updateOnlineCount();
-    setInterval(updateOnlineCount, 5000);
+  } catch(e) {
+    showResultsScreen(false);
+  }
+}
 
-    // ── Navigation ──
-    function goSolo() {
-      alert("Solo mode coming soon!");
+function showResultsScreen(leveled_up) {
+  const s = soloState;
+  const solved   = s.roundScores.filter(p => p > 0).length;
+  const best     = Math.max(...s.roundScores, 0);
+  const avgTime  = s.roundTimes.length ? Math.round(s.roundTimes.reduce((a,b)=>a+b,0)/s.roundTimes.length) : 0;
+
+  document.getElementById('results-emoji').textContent      = solved >= 8 ? '🏆' : solved >= 5 ? '🎯' : '💪';
+  document.getElementById('results-title').textContent      = solved >= 8 ? 'Excellent!' : solved >= 5 ? 'Well done!' : 'Keep going!';
+  document.getElementById('results-score').textContent      = s.score;
+  document.getElementById('results-solved').textContent     = solved;
+  document.getElementById('results-best-round').textContent = best;
+  document.getElementById('results-time-avg').textContent   = avgTime + 's';
+
+  document.getElementById('results-badge-emoji').textContent = playerData.level_emoji;
+  document.getElementById('results-badge-name').textContent  = playerData.level_name;
+  document.getElementById('results-badge-sub').textContent   = `Level ${playerData.level} · Your current rank`;
+  const newBadge = document.getElementById('results-badge-new');
+  newBadge.style.display = leveled_up ? 'inline-block' : 'none';
+
+  const roundsEl = document.getElementById('results-rounds');
+  roundsEl.innerHTML = s.puzzles.slice(0, 10).map((p, i) => {
+    const pts = s.roundScores[i] || 0;
+    return `<div class="round-row">
+      <span class="round-num">${i+1}</span>
+      <span class="round-nums">[${p.numbers.join(', ')}] → ${p.target}</span>
+      <span class="round-pts ${pts === 0 ? 'zero' : 'good'}">${pts === 0 ? '—' : '+'+pts}</span>
+    </div>`;
+  }).join('');
+
+  showScreen('screen-results');
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// MULTIPLAYER MODE
+// ══════════════════════════════════════════════════════════════════════════
+function startMultiplayer() {
+  multiState = {
+    timeLeft: 60, timerInterval: null,
+    selectedTile: null, pendingOp: null, steps: [],
+    levelTime: 60,
+  };
+  showScreen('screen-multi');
+  showOverlay('overlay-waiting');
+  connectWS();
+}
+
+function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const wsUrl = `${proto}://${location.host}/ws`;
+  ws = new WebSocket(wsUrl);
+
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ user_id: userId, username }));
+  };
+
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'waiting') return;
+    if (msg.type === 'match_found') {
+      hideOverlay('overlay-waiting');
+      const opp = msg.opponent;
+      document.getElementById('multi-opp-name').textContent        = opp;
+      document.getElementById('multi-opp-avatar').textContent      = opp[0].toUpperCase();
+      document.getElementById('multi-opp-status-name').textContent = opp;
+      document.getElementById('multi-you-name').textContent        = username;
+      document.getElementById('multi-you-avatar').textContent      = username[0].toUpperCase();
+
+      multiState.levelTime = msg.config?.time || 60;
+      multiState.timeLeft  = multiState.levelTime;
+      loadMultiRound(msg.puzzle);
+    }
+    if (msg.type === 'opponent_solved') {
+      clearMultiTimer();
+      showMultiResult('lose', `${msg.opponent} solved it!`, 'Better luck next time');
+    }
+  };
+
+  ws.onclose = () => {
+    hideOverlay('overlay-waiting');
+  };
+}
+
+function cancelWaiting() {
+  if (ws) { ws.close(); ws = null; }
+  hideOverlay('overlay-waiting');
+  goHome();
+}
+
+function loadMultiRound(puzzle) {
+  const s = multiState;
+  s.selectedTile = null; s.pendingOp = null; s.steps = [];
+  s.timeLeft = s.levelTime;
+
+  document.getElementById('multi-target').textContent = puzzle.target;
+  document.getElementById('multi-timer').textContent  = s.timeLeft;
+  document.getElementById('multi-timer').classList.remove('warn');
+  document.getElementById('multi-timer-bar').style.width = '100%';
+  document.getElementById('multi-timer-bar').className = 'timer-bar';
+  setExprPlaceholder('multi');
+  setHint('multi', 'Use all 4 numbers to reach the target');
+  setOpsEnabled('multi', false);
+  buildTiles('multi-tiles', puzzle.numbers);
+  startMultiTimer();
+}
+
+function startMultiTimer() {
+  const s = multiState;
+  s.timerInterval = setInterval(() => {
+    s.timeLeft--;
+    const el  = document.getElementById('multi-timer');
+    const bar = document.getElementById('multi-timer-bar');
+    el.textContent = s.timeLeft;
+    bar.style.width = (s.timeLeft / s.levelTime * 100) + '%';
+    if (s.timeLeft <= 10) { el.classList.add('warn'); bar.className = 'timer-bar danger'; }
+    else if (s.timeLeft <= 20) { bar.className = 'timer-bar warn'; }
+    if (s.timeLeft <= 0) {
+      clearInterval(s.timerInterval);
+      showMultiResult('lose', 'Time\'s up!', 'Opponent solved it first');
+    }
+  }, 1000);
+}
+
+function clearMultiTimer() { clearInterval(multiState.timerInterval); }
+
+function showMultiResult(type, title, sub) {
+  clearMultiTimer();
+  const el = document.getElementById('overlay-multi-result');
+  el.className = `overlay overlay-${type === 'win' ? 'win' : 'lose'}`;
+  document.getElementById('multi-result-icon').textContent  = type === 'win' ? '🏆' : '😔';
+  document.getElementById('multi-result-title').textContent = title;
+  document.getElementById('multi-result-sub').textContent   = sub;
+  showOverlay('overlay-multi-result');
+  if (ws) { ws.close(); ws = null; }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// SHARED GAME LOGIC
+// ══════════════════════════════════════════════════════════════════════════
+const TILE_COLORS = ['nc-blue','nc-orange','nc-green','nc-purple'];
+
+function buildTiles(containerId, numbers) {
+  const row = document.getElementById(containerId);
+  row.innerHTML = '';
+  const ctx = containerId.startsWith('solo') ? 'solo' : 'multi';
+  numbers.forEach((n, i) => {
+    const el = document.createElement('div');
+    el.className = 'num-circle ' + TILE_COLORS[i % TILE_COLORS.length];
+    el.textContent = n;
+    el.dataset.val = n;
+    el.onclick = () => tapTile(el, ctx);
+    row.appendChild(el);
+  });
+}
+
+function getState(ctx) { return ctx === 'solo' ? soloState : multiState; }
+
+function tapTile(el, ctx) {
+  const s = getState(ctx);
+  if (s.pendingOp && s.selectedTile && el !== s.selectedTile) {
+    const a = parseFloat(s.selectedTile.dataset.val);
+    const b = parseFloat(el.dataset.val);
+    let result;
+    if      (s.pendingOp === '+') result = a + b;
+    else if (s.pendingOp === '−') result = a - b;
+    else if (s.pendingOp === '×') result = a * b;
+    else if (s.pendingOp === '÷') {
+      if (b === 0 || a % b !== 0) {
+        flashInvalid(ctx);
+        setHint(ctx, 'Division must give a whole number', 'warn');
+        setTimeout(() => setHint(ctx, 'Use all 4 numbers to reach the target'), 1500);
+        return;
+      }
+      result = a / b;
     }
 
-    function goMultiplayer() {
-      alert("Multiplayer coming soon!");
-    }
+    const t1 = s.selectedTile, t2 = el;
+    s.steps.push({ t1, t2, t1c: t1.cloneNode(true), t2c: t2.cloneNode(true), op: s.pendingOp, result });
+    t1.classList.add('tile-pop-out');
+    t2.classList.add('tile-pop-out');
+    t1.classList.remove('selected');
+    s.selectedTile = null; s.pendingOp = null;
+    setOpsEnabled(ctx, false);
 
-    function showHowToPlay() {
-      alert("Use +, −, ×, ÷ with all 4 numbers to reach the target. Each number used exactly once!");
-    }
-  </script>
+    setTimeout(() => {
+      const merged = document.createElement('div');
+      merged.className = 'num-circle nc-merged tile-pop-in';
+      merged.dataset.val = result;
+      const lbl = result % 1 === 0 ? result : result.toFixed(1);
+      merged.textContent = lbl;
+      merged.style.fontSize = lbl.toString().length > 3 ? '15px' : '22px';
+      merged.onclick = () => tapTile(merged, ctx);
+      t1.replaceWith(merged);
+      t2.remove();
+      s.steps[s.steps.length - 1].mergedEl = merged;
+
+      setExpr(ctx, a, s.steps[s.steps.length-1].op, b, result);
+
+      const remaining = document.querySelectorAll(`#${ctx}-tiles .num-circle`).length;
+      if (remaining === 1) {
+        const target = parseFloat(document.getElementById(`${ctx}-target`).textContent);
+        if (Math.abs(result - target) < 0.0001) {
+          onSolved(ctx);
+        } else {
+          flashInvalid(ctx);
+          setHint(ctx, 'Not quite — try a different combination', 'warn');
+          setTimeout(() => setHint(ctx, 'Use all 4 numbers to reach the target'), 1800);
+        }
+      } else {
+        setHint(ctx, `${remaining} numbers left — keep going`, 'good');
+        setTimeout(() => setHint(ctx, 'Use all 4 numbers to reach the target'), 1500);
+      }
+    }, 180);
+    return;
+  }
+
+  if (s.selectedTile === el) {
+    el.classList.remove('selected');
+    s.selectedTile = null;
+    setOpsEnabled(ctx, false);
+    setExprPlaceholder(ctx);
+    return;
+  }
+  if (s.selectedTile) s.selectedTile.classList.remove('selected');
+  el.classList.add('selected');
+  s.selectedTile = el;
+  setOpsEnabled(ctx, true);
+  setExprPending(ctx, el.dataset.val);
+}
+
+function tapOp(el, op, ctx) {
+  if (el.classList.contains('disabled')) return;
+  const s = getState(ctx);
+  if (!s.selectedTile) return;
+  s.pendingOp = op;
+  setExprWithOp(ctx, s.selectedTile.dataset.val, op);
+}
+
+function doUndo(ctx) {
+  const s = getState(ctx);
+  if (!s.steps.length) return;
+  const last = s.steps.pop();
+  const r1 = last.t1c.cloneNode(true);
+  const r2 = last.t2c.cloneNode(true);
+  r1.classList.remove('tile-pop-out','selected');
+  r2.classList.remove('tile-pop-out','selected');
+  r1.onclick = () => tapTile(r1, ctx);
+  r2.onclick = () => tapTile(r2, ctx);
+  last.mergedEl.replaceWith(r1);
+  r1.after(r2);
+  s.selectedTile = null; s.pendingOp = null;
+  setOpsEnabled(ctx, false);
+  setExprPlaceholder(ctx);
+  setHint(ctx, 'Use all 4 numbers to reach the target');
+}
+
+function doClear(ctx) {
+  const s = getState(ctx);
+  s.steps = []; s.selectedTile = null; s.pendingOp = null;
+  const puzzle = ctx === 'solo'
+    ? soloState.puzzles[soloState.roundIndex]
+    : null;
+  if (puzzle) buildTiles(`${ctx}-tiles`, puzzle.numbers);
+  else {
+    document.querySelectorAll(`#${ctx}-tiles .num-circle`).forEach(t => t.remove());
+  }
+  setOpsEnabled(ctx, false);
+  setExprPlaceholder(ctx);
+  setHint(ctx, 'Use all 4 numbers to reach the target');
+}
+
+function onSolved(ctx) {
+  if (ctx === 'solo') {
+    const s = soloState;
+    clearSoloTimer();
+    const pts = Math.max(50, s.timeLeft * 2);
+    soloRoundEnd(pts);
+  } else {
+    clearMultiTimer();
+    const s = multiState;
+    const pts = Math.max(50, s.timeLeft * 2);
+    if (ws) ws.send(JSON.stringify({ type: 'solved', user_id: userId }));
+    showMultiResult('win', 'You won!', `Solved in ${s.levelTime - s.timeLeft} seconds · +${pts} pts`);
+  }
+}
+
+// ── Expression helpers ─────────────────────────────────────────────────────
+function setExprPlaceholder(ctx) {
+  document.getElementById(`${ctx}-expr`).innerHTML = '<span class="expr-placeholder">Select a number to begin</span>';
+  document.getElementById(`${ctx}-expr`).classList.remove('invalid');
+}
+function setExprPending(ctx, val) {
+  document.getElementById(`${ctx}-expr`).innerHTML =
+    `<span class="expr-num">${val}</span><span class="expr-op" style="font-size:13px;"> — pick operator</span>`;
+}
+function setExprWithOp(ctx, val, op) {
+  document.getElementById(`${ctx}-expr`).innerHTML =
+    `<span class="expr-num">${val}</span><span class="expr-op">${op}</span><span style="font-size:13px;color:var(--hint);">pick number</span>`;
+}
+function setExpr(ctx, a, op, b, res) {
+  const lbl = res % 1 === 0 ? res : res.toFixed(1);
+  document.getElementById(`${ctx}-expr`).innerHTML =
+    `<span class="expr-num">${a}</span><span class="expr-op">${op}</span><span class="expr-num">${b}</span><span class="expr-eq">=</span><span class="expr-result">${lbl}</span>`;
+}
+function flashInvalid(ctx) {
+  const box = document.getElementById(`${ctx}-expr`);
+  box.classList.add('invalid');
+  setTimeout(() => box.classList.remove('invalid'), 500);
+}
+function setHint(ctx, msg, type) {
+  const el = document.getElementById(`${ctx}-hint`);
+  el.textContent = msg;
+  el.className = 'hint-text' + (type ? ' ' + type : '');
+}
+function setOpsEnabled(ctx, on) {
+  const screen = document.getElementById(`screen-${ctx}`);
+  screen.querySelectorAll('.op-btn').forEach(b => b.classList.toggle('disabled', !on));
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+loadPlayer();
+</script>
 </body>
 </html>
