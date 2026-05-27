@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Make a Number</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--tg-theme-bg-color, #f7f7f8);
+      color: var(--tg-theme-text-color, #1a1a1a);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── Screens ── */
+    .screen { display: none; width: 100%; max-width: 420px; padding: 24px 20px; flex-direction: column; align-items: center; }
+    .screen.active { display: flex; }
+
+    /* ── Home ── */
+    .game-icon {
+      width: 64px; height: 64px;
+      background: #2AABEE;
+      border-radius: 18px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px; color: #fff;
+      margin-bottom: 14px;
+    }
+    .game-title { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+    .game-subtitle { font-size: 13px; color: var(--tg-theme-hint-color, #999); margin-bottom: 24px; }
+
+    .preview-puzzle {
+      background: var(--tg-theme-secondary-bg-color, #fff);
+      border-radius: 14px;
+      border: 0.5px solid rgba(0,0,0,0.08);
+      padding: 16px;
+      width: 100%;
+      margin-bottom: 18px;
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+    }
+    .target-row { display: flex; align-items: center; gap: 8px; }
+    .target-label { font-size: 12px; color: var(--tg-theme-hint-color, #999); }
+    .target-num { font-size: 28px; font-weight: 600; }
+
+    .num-tiles { display: flex; gap: 10px; }
+    .tile {
+      width: 52px; height: 52px;
+      background: var(--tg-theme-bg-color, #f0f0f0);
+      border-radius: 12px;
+      border: 1.5px solid rgba(0,0,0,0.1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tile.selected {
+      background: #e8f5fd;
+      border-color: #2AABEE;
+      color: #1578b8;
+    }
+    .tile-hint { font-size: 11px; color: var(--tg-theme-hint-color, #bbb); }
+
+    .stats-row {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px; width: 100%; margin-bottom: 18px;
+    }
+    .stat-card {
+      background: var(--tg-theme-secondary-bg-color, #fff);
+      border-radius: 12px;
+      border: 0.5px solid rgba(0,0,0,0.08);
+      padding: 12px; text-align: center;
+    }
+    .stat-label { font-size: 11px; color: var(--tg-theme-hint-color, #999); margin-bottom: 4px; }
+    .stat-value { font-size: 22px; font-weight: 600; }
+
+    /* ── Buttons ── */
+    .btn-primary {
+      width: 100%; padding: 14px;
+      background: #2AABEE; color: #fff;
+      border: none; border-radius: 12px;
+      font-size: 15px; font-weight: 600;
+      cursor: pointer; margin-bottom: 10px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-secondary {
+      width: 100%; padding: 14px;
+      background: var(--tg-theme-secondary-bg-color, #fff);
+      color: #2AABEE;
+      border: 1px solid rgba(42,171,238,0.3);
+      border-radius: 12px;
+      font-size: 15px; font-weight: 600;
+      cursor: pointer; margin-bottom: 10px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      position: relative;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .online-badge {
+      position: absolute; right: 14px;
+      background: #e8f9ef; color: #1a7a45;
+      font-size: 11px; font-weight: 500;
+      padding: 3px 8px; border-radius: 20px;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .online-dot {
+      width: 6px; height: 6px;
+      background: #22c55e; border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; } 50% { opacity: 0.3; }
+    }
+    .how-link {
+      font-size: 12px; color: #2AABEE;
+      cursor: pointer; text-decoration: underline;
+      text-underline-offset: 2px; margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HOME SCREEN -->
+  <div class="screen active" id="screen-home">
+    <div class="game-icon">∑</div>
+    <div class="game-title">Make a Number</div>
+    <div class="game-subtitle">Use 4 numbers to reach the target</div>
+
+    <div class="preview-puzzle">
+      <div class="target-row">
+        <span class="target-label">Target</span>
+        <span class="target-num" id="preview-target">24</span>
+      </div>
+      <div class="num-tiles" id="preview-tiles"></div>
+      <span class="tile-hint" id="tile-hint">Tap a tile to try it out</span>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Best score</div>
+        <div class="stat-value" id="best-score">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Games played</div>
+        <div class="stat-value" id="games-played">—</div>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="goSolo()">🎯 Solo mode</button>
+
+    <button class="btn-secondary" onclick="goMultiplayer()">
+      👥 Play vs. opponent
+      <span class="online-badge">
+        <span class="online-dot"></span>
+        <span id="online-count">...</span> online
+      </span>
+    </button>
+
+    <span class="how-link" onclick="showHowToPlay()">How to play?</span>
+  </div>
+
+  <script>
+    // ── Telegram init ──
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+    }
+
+    const user = tg?.initDataUnsafe?.user || {};
+    const userId = user.id || "guest";
+    const username = user.first_name || "Player";
+
+    // ── Stats (in-memory; replace with server calls later) ──
+    const stats = { bestScore: null, gamesPlayed: 0 };
+    document.getElementById("best-score").textContent = stats.bestScore ?? "—";
+    document.getElementById("games-played").textContent = stats.gamesPlayed || "—";
+
+    // ── Preview puzzle ──
+    const previewNumbers = [4, 6, 3, 2];
+    const tilesContainer = document.getElementById("preview-tiles");
+    const tileHint = document.getElementById("tile-hint");
+    let selectedTile = null;
+
+    previewNumbers.forEach(n => {
+      const el = document.createElement("div");
+      el.className = "tile";
+      el.textContent = n;
+      el.onclick = () => {
+        if (selectedTile === el) {
+          el.classList.remove("selected");
+          selectedTile = null;
+          tileHint.textContent = "Tap a tile to try it out";
+        } else {
+          if (selectedTile) selectedTile.classList.remove("selected");
+          el.classList.add("selected");
+          selectedTile = el;
+          tileHint.textContent = `${n} selected — tap an operator next`;
+        }
+      };
+      tilesContainer.appendChild(el);
+    });
+
+    // ── Online count (simulated; replace with WS ping later) ──
+    function updateOnlineCount() {
+      // TODO: fetch from server
+      const mock = [3, 5, 4, 7, 6];
+      document.getElementById("online-count").textContent =
+        mock[Math.floor(Math.random() * mock.length)];
+    }
+    updateOnlineCount();
+    setInterval(updateOnlineCount, 5000);
+
+    // ── Navigation ──
+    function goSolo() {
+      alert("Solo mode coming soon!");
+    }
+
+    function goMultiplayer() {
+      alert("Multiplayer coming soon!");
+    }
+
+    function showHowToPlay() {
+      alert("Use +, −, ×, ÷ with all 4 numbers to reach the target. Each number used exactly once!");
+    }
+  </script>
+</body>
+</html>
